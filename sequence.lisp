@@ -88,3 +88,54 @@
   (let ((rslt nil) (count (min (length lst1) (length lst2))))
     (dotimes (i count (reverse rslt))
       (push (cons (nth i lst1) (nth i lst2)) rslt))))
+
+(remove 'b (mkdots '(a b a b a b a b a b) (mklst 1 10) ) :count 2 :from-end t :key #'car)
+
+;;remove-dupricates は等しい要素の前から消していく
+(remove-duplicates (mkdots '(a b a b a b a b a b) (mklst 1 10) ) :key #'car ) ;((A . 9) (B . 10))
+
+;;map result-type func sequence ... : 列の要素にfuncを適用し結果を列に格納して返す
+(map 'list (function mklst) '(0 1 2 3 4 5 6 7) '(3 4 5 6 7 8 9 10))
+(map 'list (function cons) (mklst 1 7) (mklst 12 18))
+;;map-into result-seq func sequence ... : 列の要素にfuncを適用しresult-seqに代入する result-seq の次元は変化しない！！
+(defparameter result-seq nil)
+(defun flutten (lst &rest lst2)
+  (cond ((and (null lst) (null lst2)) nil)
+	((and (null lst) (not (null lst2))) (flutten lst2))
+	((null lst2)
+	 (if (null lst) nil
+	     (if (atom lst) (list lst)
+		 (append (flutten (car lst)) (flutten (cdr lst))))))
+	(t (append (flutten (car lst)) (flutten (cdr lst) lst2)))))
+(map-into result-seq
+	  #'flutten
+	  (mkdots (mklst 1 10) (mklst 10 20))
+	  (mkdots (mklst -9 0) (mklst 1.1 10.1)))
+
+	  
+(flutten
+     (mkdots (mklst 1 10) (mklst 10 20))
+     (mkdots (mklst -9 0) (mklst 1.1 10.1)))
+
+(map-into result-seq #'flutten 
+	  (list (mkdots (mklst 1 10) (mklst 10 20))
+		(mkdots (mklst -9 0) (mklst 1.1 10.1)))
+	  (list (mkdots (mklst 1 10) (mklst 10 20))
+		(mkdots (mklst -9 0) (mklst 1.1 10.1)))
+	  )
+
+(map-into result-seq #'+ 
+	  (flutten (mkdots (mklst 1 10) (mklst 10 20))
+		(mkdots (mklst -9 0) (mklst 1.1 10.1)))
+	  (flutten (mkdots (mklst 1 10) (mklst 10 20))
+		(mkdots (mklst -9 0) (mklst 1.1 10.1)))
+	  ) ;=> #(2 20 4)
+(setq result-seq (make-array 50 :initial-element pi))
+(map-into result-seq #'+ 
+	  (flutten (mkdots (mklst 1 10) (mklst 10 20))
+		(mkdots (mklst -9 0) (mklst 1.1 10.1)))
+	  (flutten (mkdots (mklst 1 10) (mklst 10 20))
+		(mkdots (mklst -9 0) (mklst 1.1 10.1)))
+	  )
+;;=>#(2 20 4 22 6 24 8 26 10 28 12 30 14 32 16 34 18 36 20 38 -18 2.2 -16 4.2 -14  6.2 -12 8.2 -10 10.2 -8 12.2 -6 14.2 -4 16.2 -2 18.2 0 20.2  3.141592653589793d0 3.141592653589793d0 3.141592653589793d0  3.141592653589793d0 3.141592653589793d0 3.141592653589793d0  3.141592653589793d0 3.141592653589793d0 3.141592653589793d0  3.141592653589793d0)
+
