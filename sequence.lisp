@@ -98,6 +98,7 @@
 (map 'list (function mklst) '(0 1 2 3 4 5 6 7) '(3 4 5 6 7 8 9 10))
 (map 'list (function cons) (mklst 1 7) (mklst 12 18))
 ;;map-into result-seq func sequence ... : 列の要素にfuncを適用しresult-seqに代入する result-seq の次元は変化しない！！
+;;以下のコードは思いつきで書いた
 (defparameter result-seq nil)
 (defun flutten (lst &rest lst2)
   (cond ((and (null lst) (null lst2)) nil)
@@ -107,6 +108,7 @@
 	     (if (atom lst) (list lst)
 		 (append (flutten (car lst)) (flutten (cdr lst))))))
 	(t (append (flutten (car lst)) (flutten (cdr lst) lst2)))))
+
 (map-into result-seq
 	  #'flutten
 	  (mkdots (mklst 1 10) (mklst 10 20))
@@ -139,3 +141,42 @@
 	  )
 ;;=>#(2 20 4 22 6 24 8 26 10 28 12 30 14 32 16 34 18 36 20 38 -18 2.2 -16 4.2 -14  6.2 -12 8.2 -10 10.2 -8 12.2 -6 14.2 -4 16.2 -2 18.2 0 20.2  3.141592653589793d0 3.141592653589793d0 3.141592653589793d0  3.141592653589793d0 3.141592653589793d0 3.141592653589793d0  3.141592653589793d0 3.141592653589793d0 3.141592653589793d0  3.141592653589793d0)
 
+;;concatenate result-type sequence : 複数の列の連結
+(concatenate 'vector (mklst 6 12) (mklst -1 3))
+
+;;数値のリストを文字列に変換する関数(concatenateを使用)
+(defun num=>str (lst)
+  (let ((rslt nil))
+    (setq rslt  (map 'list #'code-char lst))
+    (setq rslt (concatenate 'string  rslt))
+    ))
+;;上の関数に出力の形式('list 'string etc)を追加
+(defun numstr (lst result-type)
+  (let ((rslt nil))
+    (setq rslt  (map  'list #'code-char lst))
+    (setq rslt (concatenate result-type  rslt))
+    ))
+
+
+(num=>str (mklst 1 100)) ;=>"	
+ !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcd"
+(numstr (mklst 1 19) 'string)
+;"=> "
+
+;;文字コードと文字をドット対で返す関数
+(defun ref-code-char (start-num end-num)
+  (mkdots (mklst start-num end-num)
+	  (numstr (mklst start-num end-num) 'list)))
+;;見やすく
+(defun util-ref-code-char (s e)
+  (dolist (lst  (ref-code-char s e))
+    (format t "~d : ~c~%" (car lst) (cdr lst))))
+
+(util-ref-code-char   60 62)
+;60 : <
+;61 : =
+;62 : >
+
+
+
+   (mkdots (num=>str (mklst 90 100)) (mklst 90 100))
