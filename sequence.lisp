@@ -159,7 +159,7 @@
 
 
 (num=>str (mklst 1 100)) ;=>"	
- !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcd"
+; !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcd"
 (numstr (mklst 1 19) 'string)
 ;"=> "
 
@@ -172,11 +172,99 @@
   (dolist (lst  (ref-code-char s e))
     (format t "~d : ~c~%" (car lst) (cdr lst))))
 
-(util-ref-code-char   60 62)
+;(util-ref-code-char   60 62)
 ;60 : <
 ;61 : =
 ;62 : >
 
+;;reduce function sequence : 関数の畳み込み
+
+(reduce #'cons (mklst 0 10))
+;;=>((((((((((0 . 1) . 2) . 3) . 4) . 5) . 6) . 7) . 8) . 9) . 10)
+
+(reduce #'cons (mklst 0 10):initial-value 'a)
+;;=>(((((((((((A . 0) . 1) . 2) . 3) . 4) . 5) . 6) . 7) . 8) . 9) . 10)
+
+(reduce #'cons (mklst 0 10) :from-end t)
+;;=>(0 1 2 3 4 5 6 7 8 9 . 10)
+
+(reduce #'cons (mklst 0 10) :from-end t :initial-value 'A)
+;;=>(0 1 2 3 4 5 6 7 8 9 10 . A)
+
+;;reduceを使ったlengthの実装 (!)
+(defun reduce-len (lst)
+  (reduce #'(lambda (x y) (+ x 1)) lst :initial-value 0))
+(reduce-len (mklst 1 8))
+;;=>8
+;;reduceを使ったappendの実装(!)
+(defun reduce-append (lst  lst2)
+  (reduce #'cons lst :initial-value lst2 :from-end t))
+
+(reduce-append (mklst 1 8) (mklst 100 104))
+;;=>(1 2 3 4 5 6 7 8 100 101 102 103 104)
+
+;;sort sequence predicate : sequenceをソートする。破壊的関数
+(sort (mklst 1 10) #'>)
+;;=>(10 9 8 7 6 5 4 3 2 1)
+
+;;merge result-type seq1 seq2 func : seq1とseq2をマージする 破壊的
+(merge 'list (mklst 1 8) (mklst 11 14) #'>)
+;;=>(11 12 13 14 1 2 3 4 5 6 7 8)
+(merge 'list '(1 3 5 7) '(2 4 6 8) #'<)
+;;=>(1 2 3 4 5 6 7 8)
+(merge 'list (mklst 1 8) (mklst 11 14) #'<)
+;;=>(1 2 3 4 5 6 7 8 11 12 13 14)
+(merge 'list (mklst 9 16) (mklst 11 14) #'>)
+;;=>(11 12 13 14 9 10 11 12 13 14 15 16)
+
+;;mergeはseq1 seq2 のそれぞれの先頭（計2つの要素）にpredicateを適用してtの方を挿入していくと理解(一応)
+
+(sort (ref-code-char 30 40) (function >) :key (function car) )
+;;=>((40 . #\() (39 . #\') (38 . #\&) (37 . #\%) (36 . #\$) (35 . #\#) (34 . #\") (33 . #\!) (32 . #\ ) (31 . #\Us) (30 . #\Rs))
+
+;;member item list : itemと等しい最初の要素を探す
+(member 'd '(b c d e) )
+;;=>(D E)
+;;member-if(-not) predicate list : predicate が真になる最初の要素を返す
+(member-if #'identity '(nil nil nil 1 2 3 nil))
+;;=>(1 2 3 NIL)
+(member-if-not #'identity (mkdots '(a b c d e f g nil) (mklst 0 10)) :key #'car)
+;;=>((NIL . 7))
+(member 1.0 '(7 8 9 0 1 2 3) :test #'equalp)
+;;=>(1 2 3)
+;;equalp > equal > eql > eq (評価の厳しさ)
+
+(member 'd '(b c d e f)) ;等しい最初の要素を返す
+;;=>(D E F)
+
+(member-if (function oddp) (mklst 0 29)) ;Tを返す最初の要素
+;;=>(1 2 ...)
+
+;;substituteを使うと要素を置き換えることができるが、木構造には使えない。
+;;なのでsubst を使う。
+(defparameter testlst
+  (reduce (function cons) (mkdots (mklst 0 199) (make-list 200 :initial-element 'a))))
+
+(subst pi 'a testlst)
+
+;;subst-if(-not) new predicate tree : predicate が真となる要素をnewに置き換え
+
+(subst-if 0 (lambda (x) (and (integerp x) (evenp x))) (mkdots '(0 2 4 6 7 9 11) '(1 3 4 5 7 9 19)))
+;;=>((0 . 1) (0 . 3) (0 . 0) (0 . 5) (7 . 7) (9 . 9) (11 . 19))
+
+;;連想リストassociation list : a-list ドット対のcar:key cdr:data
+(defparameter z
+  (mkdots '(a b c d e f g) '(h i j k l m n)))
+;;assocでcar部と等しいセルを返す
+;;assoc item a-list
+(assoc 'b z) ;=>(B . I)
+
+;;assoc-if(-not) predicate a-list
+;;assoc はnil を無視する
+
+(find nil '((a . b) nil (c . d) (nil . e)) :key #'car)
+;;=>nil
+(assoc nil  '((a . b) nil (c . d) (nil . e)) )
+;;=>(NIL . E)
 
 
-   (mkdots (num=>str (mklst 90 100)) (mklst 90 100))
