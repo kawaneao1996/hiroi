@@ -159,9 +159,9 @@
 
 
 (num=>str (mklst 1 100)) ;=>"	
-; !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcd"
+;; !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcd"
 (numstr (mklst 1 19) 'string)
-;"=> "
+;;"=> "
 
 ;;文字コードと文字をドット対で返す関数
 (defun ref-code-char (start-num end-num)
@@ -267,4 +267,18 @@
 (assoc nil  '((a . b) nil (c . d) (nil . e)) )
 ;;=>(NIL . E)
 
-
+;;rassocはa-listのデータ(cdr)部分を検索する
+(setq z (mkdots '(a b c d e f g) (mklst 1 7)))
+;;rassoc item a-list :
+(rassoc 6 z)
+;;=>(F . 6)
+;;rassoc-if(-not) predicate a-list : a-listのcdr部からpredicateを満たす要素を探す
+(rassoc-if #'(lambda (x) (or (= x 3) (= x 6))) z)
+;;=>(C . 3)
+;;入力が大変なので、練習用の式だけ書く。あと簡単な概要。Hiroi先生の執筆体力に脱帽、本当にボリュームがすごい
+;;acons key data  a-list : a-listの追加
+(acons 'j 9 z)
+;;pairlis  list1 list2 : a-listを作る,要素数は揃えないとエラー,後ろから作られる
+(pairlis (mklst 11 19) (mklst 111 119))
+;;sublis a-list tree : a-list の通りに置換する。treeに副作用なし
+(sublis z (pairlis '(g f a b c d e z h i j) (mklst 0 10)))
