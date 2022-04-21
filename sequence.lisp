@@ -282,3 +282,62 @@
 (pairlis (mklst 11 19) (mklst 111 119))
 ;;sublis a-list tree : a-list の通りに置換する。treeに副作用なし
 (sublis z (pairlis '(g f a b c d e z h i j) (mklst 0 10)))
+
+(sublis '((a . 1) (b . 2)) '(a b c (a b c . a) d . b))
+
+;;endp : リストの終端を検査する。コンスセルにnil, NILにtrueを返す
+(endp nil)
+(endp '(1 2))
+
+;;nth num list : 列の先頭を0としてnum番目の要素を返す。num　が大きいとNILを返す。
+(nth 8 (mklst 0 8)) ;=>8
+
+;;nthcdr num list : num回cdrを行った結果を返す。nthと同様にnumが大きいとnil
+(nthcdr 8 (mklst 0 8)) ;=>(8)
+
+;;last list &optional (n 1) : listの最後からn個のコンスセルを返す
+(last (mklst 0 8) 6) ;=>(3 4 5 6 7 8)
+
+;;butlast list &optional (n 1) : n個のコンスセルをlistから取り除く
+(butlast (append (mklst 0 8) 9) 3)
+
+(butlast (append (mklst 0 8) 9) ) ;=>(0 1 2 3 4 5 6 7)
+
+;;make-list size &key :initial-element : sizeの要素を持つリストを作る
+(make-list 5 :initial-element 0)
+
+;;copy-list list : listのトップレベルをコピー。list以外はエラー
+(copy-list (mklst 1 19))
+
+;;copy-tree object ; objectの要素（木構造の構成要素）を全て複製する。
+(copy-tree 1)
+(copy-tree '(1 2 3 (a b c (4 5 6) d e f) 7 8 9))
+
+(eql 'a (copy-tree 'a)) ;=>T
+(eq 'a (copy-tree 'a)) ;=>T
+
+(defvar lis '(a b c (1 2)))
+(eq '(a b c (1 2)) (copy-tree lis)) ;=>NIL
+(eql '(a b c (1 2)) (copy-tree lis)) ;=>nil
+(equal '(a b c (1 2)) (copy-tree lis)) ;=> T
+
+(eq '(a b c (1 2)) lis) ;=>nil
+(eql '(a b c (1 2)) lis) ; => nil
+(equal '(a b c (1 2)) lis) ;=> T
+
+(eq lis (copy-tree lis)) ;=>NIL
+(eql lis (copy-tree lis)) ;=>nil
+(equal lis (copy-tree lis)) ;=> T
+
+(eq '(a b c (1 2)) (copy-list lis)) ;=>NIL
+(eql '(a b c (1 2)) (copy-list lis)) ;=>nil
+(equal '(a b c (1 2)) (copy-list lis)) ;=> T
+
+(eq '(a b c (1 2)) lis) ;=>nil
+(eql '(a b c (1 2)) lis) ; => nil
+(equal '(a b c (1 2)) lis) ;=> T
+
+(eq lis (copy-list lis)) ;=>NIL
+(eql lis (copy-list lis)) ;=>nil
+(equal lis (copy-list lis)) ;=> T
+
