@@ -39,4 +39,4 @@
 
 (read-sequence buff *standard-input* :start 1 :end 4)
 
-(write-sequence buff *standard-output*)
+(write-sequence buff *standard-output*
