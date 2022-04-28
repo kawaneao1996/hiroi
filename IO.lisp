@@ -80,27 +80,26 @@
       (let ((txt (read in nil)))
 	(if (not txt) (return)
 	    (print txt))))))
+	       
+
 (head-file "sequence.lisp")
 
 ;;問題３
+;;なんか動かない
+
 (defun tail-file (fname)
-  (let ((rslt nil))
-    (with-open-file (in fname :direction :input :element-type 'string)
+  (with-open-file (in fname :direction :input)
+    (let ((rslt nil))
       (loop  (let ((txt (read in nil)))
-	       (if txt
-		   (progn (print txt)
-		   (append (list txt) rslt) (print rslt))
-		   (progn (print (last rslt 10)) (return))
-		   ))))))
-(tail-file "lambda.lisp")
+	       (if (not txt) (return)
+		   (concatenate 'list rslt txt))))
+      (if (> (length rslt) 10)
+	  (dolist  (it (reverse (subseq rslt 0 10)))
+	    (print it))
 
+	  ;;else
+	  (dolist  (ij (reverse (subseq rslt 0 )))
+	    (print ij))))))
 
-;; (defun tail-file (fname)
-;;   (with-open-file (in fname :direction :input)
-;;     (loop (let ((txt (read in nil))
-;; 		(for-rslt nil))
-;; 	    (
-				  
-		  
-				 
-    
+;;(tail-file "lambda.lisp")
+
