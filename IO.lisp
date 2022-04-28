@@ -103,3 +103,17 @@
 
 ;;(tail-file "lambda.lisp")
 
+;;解けなかったのので解答を見た
+(defun tail-file (file)
+  (let (buff queue)
+    (with-open-file
+	(in file :direction :input)
+      (loop
+       (if (not (setq buff (read-line in nil)))
+	   (return))
+       (setq queue
+	     (append (if (< (length queue) 10) queue (cdr queue))
+		     (list buff)))))
+    (dolist (xs queue) (write-line xs))))
+		
+	 
