@@ -1,0 +1,128 @@
+これまでとは少しノートの取り方を変えてみた。(orgファイル)
+まだ作りかけ
+* 属性リスト
+属性リストはシンボルの、変数値ではなく、属性リストという場所に格納される
+1. get key symbol
+   symbolの属性リストからkeyの属性値を返す
+2. setf とgetを組み合わせて属性リストをシンボルに代入する
+   #+begin_src lisp
+     (setf (get 'tarou 'height) 180)
+   #+end_src
+
+   #+RESULTS:
+   : 180
+3. remprop symbol key
+   属性リストから削除する
+   #+begin_src lisp
+     (remprop 'tarou 'height)
+   #+end_src
+
+   #+RESULTS:
+   | HEIGHT | 180 | WEIGHT | 80 |
+
+4. symbol-plist
+   シンボルに格納されている属性リストを表示
+   #+begin_src lisp
+     (symbol-plist 'tarou)
+   #+end_src
+
+   #+RESULTS:
+   | WEIGHT | 80 |
+
+
+* マクロ
+defmacro マクロ名前　（仮引数　…）　S式
+
+1. 引数は評価されない
+2. S式を順番に評価し、一番最後の評価結果を再度評価して結果を返す
+   リストとしてプログラムを作り、作ったプログラムを実行する
+
+
+** 例：
+#+begin_src lisp :expoets both
+  (defun square (x) (* x x))
+  (defun foo (x) (format t "~D " x) x)
+  (square (foo 2))
+ #+end_src
+
+#+RESULTS:
+: 4
+#+begin_src lisp  :expoets both
+  (defmacro m-square (x) (list '* x x))
+  (defun foo (x) (format t  "~D " x) x)
+  (m-square (foo 3))
+#+end_src
+
+#+RESULTS:
+: 9
+
+↑では画面（標準出力に二回formatの表示がでる）これはマクロの展開でxに(foo 3)が代入され
+それが評価される時にxの位置に二度呼ばれるから。
+
+** スタックの操作
+pushとpopをマクロを使って実装する
+#+begin_src lisp
+  (defmacro my-push (item place)
+    (list 'setq
+	  place
+	  (list 'cons item place)))
+  (defvar aa nil)
+  (my-push 10 aa)
+#+end_src
+
+#+RESULTS:
+| 10 |
+
+#+begin_src lisp
+  (defmacro my-pop (place)
+  (list 'prog1
+	(list 'car place)
+	(list 'setq
+	      place
+	      (list 'cdr place))))
+  (my-push 20 aa)
+  (my-pop aa)
+#+end_src
+
+#+RESULTS:
+: 20
+
+上のバッククオートを使った改良
+#+begin_src lisp
+    (defmacro my-push2 (item  place)
+      `(setq ,place (cons ,item ,place)))
+    (defmacro my-pop2 (place)
+      `(prog1
+	(car ,place)
+	(setq ,place (cdr ,place))))
+#+end_src
+
+#+RESULTS:
+: MY-POP2
+
+** レキシカル変数
+マクロ展開時と違い、展開後のS式を評価する時には、マクロ呼び出し時点での局所変数が代入される。
+
+** defineマクロ
+schemeのdefineをマクロを使って定義する。
+
+#+begin_src lisp
+  (defmacro define (args-list &body body)
+    `(defun ,(car args-list) ,(cdr args-list) ,@body))
+#+end_src
+
+#+RESULTS:
+: DEFINE
+#+begin_src lisp
+  (define (foo x y) (+ x y))
+#+end_src
+
+#+RESULTS:
+: FOO
+
+#+begin_src lisp
+  (foo 10 20)
+#+end_src
+
+#+RESULTS:
+: 30
