@@ -13,12 +13,14 @@
 	     (insert-element x (cdr xs) pred)))))
 
 ;;;挿入ソート
+;;実行時間はN^2に比例
 (defun insert-sort (xs pred)
   (if (null xs)
       nil
       (insert-element (car xs) (insert-sort (cdr xs) pred) pred)))
 
 ;;クイックソート
+;;実行時間は平均してN*log2(N)に比例。ただしリストがソート済みに近い状態だと最悪N^2くらいになる
 ;;リストの分割
 (defun partition (p xs pred)
   (let  (ys zs)
@@ -32,5 +34,23 @@
 	(append (quick-sort (first ys) pred)
 		(list (car xs))
 		(quick-sort (second ys) pred)))))
+;;マージとは二つのソート済みのリストを統合するやり方
+;;平均してN*log2(N)の実行時間。クイックソートと違いリストの内容に依らない
+(defun merge-list (xs ys pred)
+  (cond
+    ((null xs) ys)
+    ((null ys) xs)
+    ((funcall pred (car xs) (car ys))
+     (cons (car xs) (merge-list (cdr xs) ys pred)))
+    (t (cons (car ys) (merge-list xs (cdr ys) pred)))))
 
-			   
+(defun merge-sort (xs n pred)
+  (cond
+    ((null xs) nil)
+    ((= n 1) (list (car xs)))
+    (t (let ((m (floor n 2)))
+	 (merge-list (merge-sort xs m pred)
+		     (merge-sort (nthcdr m xs) (- n m) pred)
+		     pred)))))
+     
+		     
