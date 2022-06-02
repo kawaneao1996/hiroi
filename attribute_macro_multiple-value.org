@@ -1,34 +1,47 @@
 これまでとは少しノートの取り方を変えてみた。(orgファイル)
 まだ作りかけ
-* 属性リスト
+* 属性リスト:property list , plist
 属性リストはシンボルの、変数値ではなく、属性リストという場所に格納される
 1. get key symbol
    symbolの属性リストからkeyの属性値を返す
 2. setf とgetを組み合わせて属性リストをシンボルに代入する
-   #+begin_src lisp
+   #+begin_src lisp :exports both
      (setf (get 'tarou 'height) 180)
    #+end_src
 
    #+RESULTS:
    : 180
+   #+begin_src lisp :exports both
+     (setf (get 'tarou 'weight) 80)
+   #+end_src
+
+   #+RESULTS:
+   : 80
+
+   #+begin_src lisp :exports both
+     (symbol-plist 'tarou)
+   #+end_src
+
+   #+RESULTS:
+   | WEIGHT | 80 | HEIGHT | 180 |
+
 3. remprop symbol key
    属性リストから削除する
-   #+begin_src lisp
+   #+begin_src lisp :exports both :exports both
      (remprop 'tarou 'height)
    #+end_src
 
    #+RESULTS:
-   | HEIGHT | 180 | WEIGHT | 80 |
+   | HEIGHT | 180 |
 
 4. symbol-plist
    シンボルに格納されている属性リストを表示
-   #+begin_src lisp
+   #+begin_src lisp :exports both
      (symbol-plist 'tarou)
    #+end_src
 
    #+RESULTS:
    | WEIGHT | 80 |
-
 
 * マクロ
 defmacro マクロ名前　（仮引数　…）　S式
@@ -39,7 +52,7 @@ defmacro マクロ名前　（仮引数　…）　S式
 
 
 ** 例：
-#+begin_src lisp :expoets both
+#+begin_src lisp :exports both :expoets both
   (defun square (x) (* x x))
   (defun foo (x) (format t "~D " x) x)
   (square (foo 2))
@@ -47,7 +60,7 @@ defmacro マクロ名前　（仮引数　…）　S式
 
 #+RESULTS:
 : 4
-#+begin_src lisp  :expoets both
+#+begin_src lisp :exports both  :expoets both
   (defmacro m-square (x) (list '* x x))
   (defun foo (x) (format t  "~D " x) x)
   (m-square (foo 3))
@@ -61,7 +74,7 @@ defmacro マクロ名前　（仮引数　…）　S式
 
 ** スタックの操作
 pushとpopをマクロを使って実装する
-#+begin_src lisp
+#+begin_src lisp :exports both
   (defmacro my-push (item place)
     (list 'setq
 	  place
@@ -73,7 +86,7 @@ pushとpopをマクロを使って実装する
 #+RESULTS:
 | 10 |
 
-#+begin_src lisp
+#+begin_src lisp :exports both
   (defmacro my-pop (place)
   (list 'prog1
 	(list 'car place)
@@ -88,7 +101,7 @@ pushとpopをマクロを使って実装する
 : 20
 
 上のバッククオートを使った改良
-#+begin_src lisp
+#+begin_src lisp :exports both
     (defmacro my-push2 (item  place)
       `(setq ,place (cons ,item ,place)))
     (defmacro my-pop2 (place)
@@ -106,23 +119,186 @@ pushとpopをマクロを使って実装する
 ** defineマクロ
 schemeのdefineをマクロを使って定義する。
 
-#+begin_src lisp
+#+begin_src lisp :exports both
   (defmacro define (args-list &body body)
     `(defun ,(car args-list) ,(cdr args-list) ,@body))
 #+end_src
 
 #+RESULTS:
 : DEFINE
-#+begin_src lisp
+#+begin_src lisp :exports both
   (define (foo x y) (+ x y))
 #+end_src
 
 #+RESULTS:
 : FOO
 
-#+begin_src lisp
+#+begin_src lisp :exports both
   (foo 10 20)
 #+end_src
 
 #+RESULTS:
 : 30
+
+,@を使うとリストを外した値に置き換わる。
+
+#+begin_src lisp :exports both
+  (setq v '(pen))
+#+end_src
+
+#+RESULTS:
+| PEN |
+
+#+begin_src lisp :exports both
+  `(this is a ,@v)
+#+end_src
+
+#+RESULTS:
+| THIS | IS | A | PEN |
+
+my-push と my-pop のバッククオートを使った改良
+#+begin_src lisp :exports both
+  (defmacro my-push (item place)
+    `(setq ,place  (cons ,item ,place)))
+#+end_src
+
+#+RESULTS:
+: MY-PUSH
+
+
+#+begin_src lisp :exports both
+  (defmacro my-pop (place)
+    `(prog1
+	 (car ,place)
+       (setq  ,place (cdr ,place))))
+#+end_src
+
+#+RESULTS:
+: MY-POP
+
+* 多値
+多値を渡すには
+values
+を使い、多値を受け取るには
+multiple-value-bind
+を使う。
+その他にもlistの要素を多値として返す
+values-list
+がある。
+またformを評価した多値をまとめて関数に渡す
+multiple-value-call
+がある。
+#+begin_src lisp
+    (multiple-value-call (lambda (&rest lst) (print lst))
+      (truncate 111 33)
+      (values-list (list 1 2 3)))
+#+end_src
+
+#+RESULTS:
+| 3 | 12 | 1 | 2 | 3 |
+
+** 教科書からの引用：簡単な例題
+
+*** クイックソートの多値を用いた改良
+リストの分割
+#+begin_src lisp
+  (defun partiton (p xs pred)
+    (let (ys zs)
+      (dolist (x xs (values ys zs))
+	(if (funcall pred x p)
+	    (push x ys)
+	    (push x zs)))))
+#+end_src
+
+#+RESULTS:
+: PARTITON
+
+関数partitionはpredが#'<だとすると引数のリストxsを
+ys<p , p<zs となるようにリストys,zsに分割してys,zsを
+返す。
+クイックソート
+#+begin_src lisp
+  (defun quick-sort (xs pred)
+    (if (null xs)
+	nil
+	(multiple-value-bind
+	      (ys zs)
+	    (partiton (car xs) (cdr xs) pred)
+	  (append (quick-sort ys pred)
+		  (list (car xs))
+		  (quick-sort zs pred)))))
+
+#+End_src
+
+#+RESULTS:
+: QUICK-SORT
+
+#+begin_src lisp
+  (defun random-seq (n)
+    (do ((ans nil  (remove-duplicates ans)))
+	((>= (length ans) n) ans)
+      (setq ans (cons (random (1+ n)) ans))
+      ))
+#+end_src
+
+#+RESULTS:
+: RANDOM-SEQ
+#+begin_src lisp :exports both 
+  (random-seq 19)
+#+end_src
+
+#+RESULTS:
+| 5 | 3 | 14 | 1 | 17 | 11 | 12 | 13 | 19 | 10 | 18 | 0 | 4 | 16 | 9 | 8 | 6 | 7 | 2 |
+
+#+begin_src lisp :exports both 
+  (quick-sort (random-seq 19) #'<)
+#+end_src
+
+#+RESULTS:
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 |
+
+*** zipとunzip
+複数のリストを受け取り、同じ位置にある要素をリストにまとめてリストで返す関数zipとそれらをまた複数のリストに戻すunzipを考える
+
+#+begin_src lisp
+  (defun zip (&rest lst)
+    ;;ここの引数lstを複数のリストに分解してmapcarに渡したい
+    ((lambda (xs)
+	      (mapcar #'list xs))
+	    lst))
+
+
+#+end_src
+
+#+RESULTS:
+: ZIP
+
+#+begin_src lisp
+  (defun mk-seq (n)
+    (do ((i 1 (1+ i)) (rslt nil))
+	((> i n) (reverse rslt))
+      (setq rslt (cons i rslt))))
+#+end_src
+
+#+RESULTS:
+: MK-SEQ
+
+#+begin_src lisp :exports both 
+  (mk-seq 4)
+#+end_src
+
+#+RESULTS:
+| 1 | 2 | 3 | 4 |
+
+#+begin_src lisp
+  (zip (mk-seq 8)  (random-seq 12) (random-seq 5) )
+#+end_src
+
+#+RESULTS:
+| (1 2 3 4 5 6 7 8)            |
+| (12 5 2 3 1 7 11 10 8 0 9 4) |
+| (5 3 4 2 1)                  |
+
+* 教科書
+Makoto Hiroiさんのお気楽Common Lisp プログラミング入門
+http://www.nct9.ne.jp/m_hiroi/clisp/abcl12.html
