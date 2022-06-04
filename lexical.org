@@ -1,0 +1,224 @@
+問題回答の途中まで
+* レキシカルスコープとクロージャ
+
+レキシカルスコープ：定義時での変数を参照する
+
+ダイナミックスコープ：呼び出し時での変数を参照する
+
+クロージャ：評価する関数と、レキシカル変数を合わせたもの。参照可能なレキシカル変数の集合を「環境」と呼ぶ
+
+スコープ：アクセス可能な場所範囲
+
+エクステント：アクセス可能な時間範囲
+
+（参考：https://t2ru.hatenablog.jp/entry/20090115/1232038829）
+
+** fletとlabelsの違い
+
+文法は同じ。fletは局所関数はそれぞれ独立に定義する。
+一方でlabelsは再帰定義や相互再帰ができる。
+
+*** labelsの使用例（フィボナッチ数のプログラム）
+#+begin_src lisp
+  (defun fibo (n)
+    (labels
+	((fiboi (n a b)
+	   (if (zerop n)
+	       a
+	       (fiboi (1- n) b (+ a b)))))
+      (fiboi n 0 1)))
+#+end_src
+
+#+RESULTS:
+: FIBO
+
+
+#+begin_src lisp
+  (let ((rslt nil)) (dotimes (x 10 (nreverse rslt)) (setq rslt (cons (fibo x) rslt))))
+#+end_src
+
+#+RESULTS:
+| 0 | 1 | 1 | 2 | 3 | 5 | 8 | 13 | 21 | 34 |
+
+** クロージャ
+functionが返すのはクロージャ（functionはシンボルに格納された関数を返す）
+
+例えば次の例ではクロージャを返す
+#+begin_src lisp
+  (defun foo (x) (lambda (y) (* x y)))
+#+end_src
+
+#+RESULTS:
+: FOO
+
+#+begin_src lisp :exports both 
+  (defparameter f2 (foo 2))
+#+end_src
+
+#+RESULTS:
+: F2
+使用例：
+#+begin_src lisp
+  (funcall f2 101)
+#+end_src
+
+#+RESULTS:
+: 202
+
+#+begin_src lisp :exports both 
+  (mapcar f2 '(1 2 3 4 5))
+#+end_src
+
+#+RESULTS:
+| 2 | 4 | 6 | 8 | 10 |
+
+** カリー化
+- カリー化とは：
+  複数の引数をとる関数f(x1,x2,x3, ...)を考える。
+  
+  f(x1,x2,x3 ...) = F(x1) = g
+  （ただしgはg(x2,x3, ...) = f(x1,x2,x3, ...)となる関数）
+
+  このgをfのカリー化という（Wikipediaより）
+
+  要は変数を固定して、引数の次元を落とした関数を作るということ？
+
+  Haskellは複数の引数はカリー化で作るらしい。
+
+*** カリー化関数の例
+#+begin_src lisp
+  (defun map-curry (func)
+    (labels
+	((map-inner (xs)
+	   (if (null xs)
+	       nil
+	       (cons (funcall func (car xs))
+		     (map-inner (cdr xs))))))
+      #'map-inner))
+#+end_src
+
+#+RESULTS:
+: MAP-CURRY
+これはmap1(func,xs)をmap-curry(func)にカリー化している。
+なのでmap-curryはxsを引数とする関数を返す。
+
+使用例：
+#+begin_src lisp
+  (funcall (map-curry (lambda (x) (expt -2 x))) '(1 2 3 4 5))
+#+end_src
+
+#+RESULTS:
+| -2 | 4 | -8 | 16 | -32 |
+
+** ジェネレータ
+ジェネレータ(generator)とは、呼び出されるたびに新しい値を生成する
+プログラムでクロージャの応用で作ることができる。
+
+*** ジェネレータの例：フィボナッチ数を発生
+#+begin_src lisp
+  (defun make-fibo ()
+    (let ((a 0) (b 1))
+      (lambda ()
+	(prog1 a (psetq a b b (+ a b))))))
+#+end_src
+
+#+RESULTS:
+: MAKE-FIBO
+
+#+begin_src lisp
+  (let ((f1 (make-fibo))
+	(rslt nil))
+    (dotimes (x 10 (nreverse rslt))
+      (setq rslt
+	    (cons (funcall f1) rslt))))
+#+end_src
+
+#+RESULTS:
+| 0 | 1 | 1 | 2 | 3 | 5 | 8 | 13 | 21 | 34 |
+
+*** クロージャ内の変数をリセットする方法
+
+#+begin_src lisp
+  (defun make-fibo()
+    (let* ((a 0) (b 1)
+	   (reset-func (lambda () (setq a 0 b 1)))
+	   (value-func (lambda () (prog1 a (psetq a b b (+ a b))))))
+      (lambda (type)
+	(case
+	    type
+	  (reset (funcall reset-func))
+	  (value (funcall value-func))))))
+#+end_src
+
+#+RESULTS:
+: MAKE-FIBO
+
+#+begin_src lisp
+  (let ((rslt nil)
+	(f3 (make-fibo)))
+    (dotimes (x 20 (nreverse rslt))
+      (if (= 0 (mod (1+ x) 10))
+	  (push (funcall f3 'reset) rslt)
+	  (push (funcall f3 'value) rslt)
+	  )))
+#+end_src
+
+#+RESULTS:
+| 0 | 1 | 1 | 2 | 3 | 5 | 8 | 13 | 21 | 1 | 0 | 1 | 1 | 2 | 3 | 5 | 8 | 13 | 21 | 1 |
+
+** 問題
+
+*** 1 マッピングした結果を平坦化する関数 flatmap func xs
+マッピングする処理と平坦化する処理を分ける
+マッピングする処理:これはmapcarでlistが返ってくる
+平坦化する処理：flutten　ネストしたリストを平坦化して返す
+
+#+begin_src lisp
+  (defun flutten (lst)
+
+    (if (null lst)
+	nil
+	(if (atom lst)
+	    (list lst)
+	    (append  (flutten (car lst))
+		     (flutten (cdr lst))))))
+#+end_src
+
+#+RESULTS:
+: FLUTTEN
+
+#+begin_src lisp
+  (flutten '(a b (c d (e f (g h (i) j (k l) (m n) o) p ) q) r s))
+#+end_src
+
+#+RESULTS:
+| A | B | C | D | E | F | G | H | I | J | K | L | M | N | O | P | Q | R | S |
+
+#+begin_src lisp
+  (defun flatmap (func xs)
+    (flutten
+     (mapcar func xs)))
+#+end_src
+
+#+RESULTS:
+: FLATMAP
+
+#+begin_src lisp :exports both 
+  (flatmap (lambda (x) (list x (list x  (list x)))) '(1 2 3 4 5 6 pi))
+#+end_src
+
+#+RESULTS:
+| 1 | 1 | 1 | 2 | 2 | 2 | 3 | 3 | 3 | 4 | 4 | 4 | 5 | 5 | 5 | 6 | 6 | 6 | PI | PI | PI |
+
+
+* 初めてみた関数
+
+** code=
+文字型データ同士を比較して、等しかったらTを返す
+
+* 気づき
+CommonLispでlabelsとかで局所関数を定義するのとlet*で
+変数にlambda式を入れてfuncallで呼び出して使うのは一緒だと気が付いた。
+* 教科書
+** M.Hiroi さんのWebページ
+お気楽 Common Lisp プログラミング入門 http://www.nct9.ne.jp/m_hiroi/clisp/abcl13.html
